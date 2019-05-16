@@ -975,41 +975,39 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 			// Prepare data to send, calculate stream size
 			try {
-				if (firstRun) {
-					// The files are opened only once, when DFU service is first started.
-					// In case the service needs to be restarted (for example a buttonless service
-					// was found or to send Application in the second connection) the input stream
-					// is kept as a global service field. This is to avoid SecurityException
-					// when the URI was granted with one-time read permission.
-					// See: Intent#FLAG_GRANT_READ_URI_PERMISSION (https://developer.android.com/reference/android/content/Intent.html#FLAG_GRANT_READ_URI_PERMISSION).
-					sendLogBroadcast(LOG_LEVEL_VERBOSE, "Opening file...");
-					if (fileUri != null) {
-						is = openInputStream(fileUri, mimeType, mbrSize, fileType);
-					} else if (filePath != null) {
-						is = openInputStream(filePath, mimeType, mbrSize, fileType);
-					} else if (fileResId > 0) {
-						is = openInputStream(fileResId, mimeType, mbrSize, fileType);
-					}
-
-					// The Init file Input Stream is kept global only in case it was provided
-					// as an argument (separate file for HEX/BIN and DAT files).
-					// If a ZIP file was given with DAT file(s) inside it will be taken from the ZIP
-					// ~20 lines below.
-					if (initFileUri != null) {
-						// Try to read the Init Packet file from URI
-						initIs = getContentResolver().openInputStream(initFileUri);
-					} else if (initFilePath != null) {
-						// Try to read the Init Packet file from path
-						initIs = new FileInputStream(initFilePath);
-					} else if (initFileResId > 0) {
-						// Try to read the Init Packet file from given resource
-						initIs = getResources().openRawResource(initFileResId);
-					}
-
-					final int imageSizeInBytes = is.available();
-					if ((imageSizeInBytes % 4) != 0)
-						throw new SizeValidationException("The new firmware is not word-aligned.");
+				// The files are opened only once, when DFU service is first started.
+				// In case the service needs to be restarted (for example a buttonless service
+				// was found or to send Application in the second connection) the input stream
+				// is kept as a global service field. This is to avoid SecurityException
+				// when the URI was granted with one-time read permission.
+				// See: Intent#FLAG_GRANT_READ_URI_PERMISSION (https://developer.android.com/reference/android/content/Intent.html#FLAG_GRANT_READ_URI_PERMISSION).
+				sendLogBroadcast(LOG_LEVEL_VERBOSE, "Opening file...");
+				if (fileUri != null) {
+					is = openInputStream(fileUri, mimeType, mbrSize, fileType);
+				} else if (filePath != null) {
+					is = openInputStream(filePath, mimeType, mbrSize, fileType);
+				} else if (fileResId > 0) {
+					is = openInputStream(fileResId, mimeType, mbrSize, fileType);
 				}
+
+				// The Init file Input Stream is kept global only in case it was provided
+				// as an argument (separate file for HEX/BIN and DAT files).
+				// If a ZIP file was given with DAT file(s) inside it will be taken from the ZIP
+				// ~20 lines below.
+				if (initFileUri != null) {
+					// Try to read the Init Packet file from URI
+					initIs = getContentResolver().openInputStream(initFileUri);
+				} else if (initFilePath != null) {
+					// Try to read the Init Packet file from path
+					initIs = new FileInputStream(initFilePath);
+				} else if (initFileResId > 0) {
+					// Try to read the Init Packet file from given resource
+					initIs = getResources().openRawResource(initFileResId);
+				}
+
+				final int imageSizeInBytes = is.available();
+				if ((imageSizeInBytes % 4) != 0)
+					throw new SizeValidationException("The new firmware is not word-aligned.");
 
 				// Update the file type bit field basing on the ZIP content
 				if (MIME_TYPE_ZIP.equals(mimeType)) {
